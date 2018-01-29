@@ -1,0 +1,344 @@
+
+ import scala.util.Random
+ import scala.io.StdIn
+ import scala.collection.mutable.ArrayBuffer
+ 
+ class Board()
+ {
+   var ships = scala.collection.mutable.Map[String, Int]("aircraft carrier" ->5,
+        "battleship"-> 4,
+        "submarine" -> 3,
+       "destroyer"-> 3,
+        "patrol boat"-> 2)
+        
+   var ocean = Array.ofDim[Char](10, 10)
+   
+ }
+ 
+ object Battleships_Practice
+{
+ var uboard = new Board() // user board
+ var cboard = new Board() // computer board
+
+  def main(args: Array[String]) 
+  {
+    uboard = user_place_ships(uboard) // setting ships in user board
+    cboard = computer_place_ships(cboard) // setting ships in computer board
+   
+    while (true) // large loop to run game
+    {
+    print_board('c')
+    cboard = user_move(get_coordinates(),cboard)
+    if(check_win(cboard)) 
+      {
+      println("You won")
+        return
+      }
+      print_board('c')
+    println("Ending user's turn")
+    
+    uboard = computer_move(uboard)
+    if (check_win(cboard))
+     {
+      println("The computer won")
+        return
+      }
+    print_board ('u')
+    println ("Ending computer's turn")
+    }
+    
+    
+    
+  
+  }
+
+def computer_move(board:Board):Board =
+{
+  var x = Random.nextInt(10)
+  var y = Random.nextInt(10)
+  var res = make_move(x,y,'c')
+    if (res == "hit")
+   {println("Hit at " + (x+1).toString + "," + (y+1).toString)
+            board.ocean(x)(y) = '$'
+   }
+   else if (res == "miss")
+   {println("Sorry, " + (x+1).toString  + ", " + (y+1).toString + " is a miss.")
+            board.ocean(x)(y) = '*'
+   }
+   else if (res == "try again")
+   {
+            println("Sorry, that coordinate was already hit")
+            computer_move(board)
+   }
+     return board
+  
+}
+
+
+def user_place_ships (board:Board): Board=
+{ var xy = new ArrayBuffer[Int]()
+  var orientation = ' ' 
+  var temp = board // temporary board for changes made
+  for (i <- 0 until 5)
+  {
+   var valid = false 
+   while(!valid)
+   {
+     print_board('u')
+     print ("\n")
+     print("Placing a ship")
+     xy = get_coordinates() // stores coordinates in an array
+     orientation = v_or_h() // gets orientation
+     valid = validate(temp, xy(0), xy(1), orientation) // checks if coordinates are valid
+     
+     if(!valid)
+       println ("Cannot place a ship there.\nPlease take a look at the board and try again.")
+   }
+  temp = place_ship(temp, xy(0), xy(1), orientation)
+  }
+  println("Done placing user ships.")
+  temp
+}
+
+def computer_place_ships (board:Board): Board=
+{ var x= 0
+  var y= 0
+  var o =0 
+  var orientation = ' ' 
+  var temp = board // temporary board
+  for (i <- 0 until 5)
+  {
+     var valid = false 
+     while(valid == false)
+          {
+          x = Random.nextInt(10) // randomized x value of ship
+          y = Random.nextInt(10) // randomized y value of ship 
+          o = Random.nextInt(2)  // randomized orientation value
+     
+           o match{
+        case 0 => orientation = 'v' // pattern matching for orientation values
+        case 1 => orientation = 'h'     
+                  }
+     valid = validate(temp, x, y, orientation)
+   }
+  println ("Computer placing a ship")
+  temp = place_ship(temp, x, y, orientation)
+  }
+  
+  println("Done placing computer ships.")
+  temp
+}
+
+def place_ship(board: Board, x:Int, y:Int, orientation: Char):Board=
+{ if (orientation == 'v')
+      {for( i<-0 until 3)
+        {
+        board.ocean(x+i)(y) = '@'
+        }
+      }
+else if (orientation == 'h')
+      {for( i<-0 until 3)
+        {
+        board.ocean(x)(y+i) = '@'
+        }
+      }
+  board
+}
+
+def validate (board: Board, x:Int, y:Int, orientation:Char): Boolean=
+ {
+  if(orientation == 'v' && x+2 > 10)
+    false
+  else if (orientation == 'h' && y+2 > 10)
+    false
+  else 
+  {  if(orientation == 'v')
+      {
+       for (i <-0 until 3 )
+       {
+         if(board.ocean(x+i)(y).isWhitespace!= false) // if space is not empty, print !!!
+         { println("!!!")
+                false
+         }
+       }
+      }
+        if (orientation == 'h')
+       {
+         for (i <-0 until 3 )
+         {
+           if(board.ocean(x)(y+i).isWhitespace!= false) 
+                false
+         }
+       }
+  }
+  true
+ }
+
+ def check_win (board:Board):Boolean =
+ {
+   for (i<- 0 until 10)
+   {
+   for (j<-  0 until 10)
+     {
+      if(board.ocean(i)(j).isWhitespace!= false && board.ocean(i)(j)!= '*' && board.ocean(i)(j) != '$')
+      {
+      false
+      }
+     }
+       
+   }
+   true
+ }
+ 
+ 
+ def user_move (numc: ArrayBuffer[Int], board: Board):Board =
+ {
+   var x= numc(0) // x coordinate from array
+   var y = numc(1) // y coordinate from array
+   var res = make_move(x,y,'u')
+   
+   if (res == "hit")
+   {println("Hit at " + (x+1).toString + "," + (y+1).toString) // fills square with hit
+            board.ocean(x)(y) = '$'
+   }
+   else if (res == "miss")
+   {println("Sorry, " + (x+1).toString  + ", " + (y+1).toString + " is a miss.") // fills square with miss
+            board.ocean(x)(y) = '*'
+   }
+   else if (res == "try again")
+   {
+            println("Sorry, that coordinate was already hit")  // tells that there was a miss
+   }
+     return board
+ }
+
+  def make_move(x: Int, y:Int, s:Char):String =
+ { if (s == 'u')
+  {
+   if (cboard.ocean(x)(y).isWhitespace) // check if square is empty
+   {
+     "miss"
+   }
+   else 
+     if(cboard.ocean(x)(y) == '*' || cboard.ocean(x)(y) == '$' ) // check if square has already been hit before
+     {
+       "try again"
+     }
+     else 
+       "hit"
+  }
+ else 
+   {
+   if (uboard.ocean(x)(y).isWhitespace)
+   {
+     "miss"
+   }
+   else 
+     if(uboard.ocean(x)(y) == '*' || uboard.ocean(x)(y) == '$' )
+     {
+       "try again"
+     }
+     else 
+       "hit"
+  }
+ 
+     
+ }
+  def v_or_h():Char = 
+  {
+    println("Vertical or horizontal (v or h)?")
+    var user_input = scala.io.StdIn.readChar()    //  stores user input 
+        if (user_input == 'v' || user_input == 'h')
+            user_input
+        else { 
+          println("Invalid input. Please only enter v or h")
+          v_or_h()
+             }
+  }
+    
+    def get_coordinates():ArrayBuffer[Int] = 
+    {
+      print("\n")
+      println("Please enter coordinates (row,col)?")
+      var user_input = scala.io.StdIn.readLine() 
+      try{
+        var numc = ArrayBuffer[Int]()
+        var coords = user_input.split(",") // split the user input into an array using a comma
+        if (coords.length!=2) 
+        { 
+          throw new Exception ("Invalid entry, too few/many coordinates.")  // Check if too many coordinates were entered.
+          get_coordinates()
+        }
+        
+        numc += coords(0).toInt -1
+        numc += coords(1).toInt -1
+        
+        if (numc(0) > 9 || numc(0) < 0 || numc(1) > 9 || numc(1) < 0) 
+        {
+          throw new Exception ("Invalid entry. Please use values between 1 to 10 only.") // Check if coordinates entered are within range
+        }
+          numc // returns Int Array
+         }
+      catch {
+            case ex: IllegalArgumentException => println("Invalid entry. Please enter only numeric values for coordinates.")
+                                                            get_coordinates()// Catches error for wrong input
+            case _: Exception => println("Error")
+                                     get_coordinates()// Catches any other error
+            }
+    }
+
+      
+      def print_board(s:Char) =
+      {
+        var player = "Computer"
+        if(s == 'u') 
+          player = "User"
+          
+          println("The " + player + "\'s board looks like this: ")
+          
+        
+        for (i <-0 until 10)
+        { 
+            print("  " + (i+1).toString + " ")
+        }
+        print("\n")
+         for (i <-0 until 10)
+         {
+           if (i != 9)
+           print((i+1).toString + " ")
+           else
+           print((i+1).toString + "")
+             for (j <- 0 until 10)
+             {
+               if(s=='u' && uboard.ocean(i)(j).isWhitespace) // check if space is filled
+               {
+                 print(" ")  
+              
+               }
+               else
+               {
+                   print(uboard.ocean(i)(j))
+               }
+               if(s=='c')
+               {
+                 if(cboard.ocean(i)(j) == '*' || cboard.ocean(i)(j) == '$')
+                 {
+                 print(cboard.ocean(i)(j))  
+                 }
+                 else
+                 {
+                   print(" ")
+                 }
+               }
+                if (j != 10)
+                print(" | ")
+             }
+           if(i!=9)
+            println("")  
+           
+         }
+        
+   
+      }  
+      
+}
